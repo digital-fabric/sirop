@@ -1,2 +1,4 @@
-# sirop
-Ruby code rewriter
+# Sirop
+
+Sirop is a Ruby code rewriter. More information coming soon...
+
