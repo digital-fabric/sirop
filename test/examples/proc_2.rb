@@ -1,0 +1,3 @@
+proc do
+  :bar
+end

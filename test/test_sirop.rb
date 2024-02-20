@@ -4,11 +4,18 @@ require 'bundler/setup'
 require 'minitest/autorun'
 require 'sirop'
 
-require_relative './examples/simple.rb'
+module Kernel
+  CODE_BASE_PATH = File.join(__dir__, 'examples')
+
+  def load_code(name)
+    fn = File.join(CODE_BASE_PATH, "#{name}.rb")
+    eval(IO.read(fn), binding, fn)
+  end
+end
 
 class FindTest < Minitest::Test
   def test_find_lambda_1
-    proc = SIMPLE_LAMBDA_1
+    proc = load_code(:lambda_1)
     node = Sirop.find(proc)
 
     assert_kind_of Prism::LambdaNode, node
@@ -17,7 +24,7 @@ class FindTest < Minitest::Test
   end
 
   def test_find_lambda_2
-    proc = SIMPLE_LAMBDA_2
+    proc = load_code(:lambda_2)
     node = Sirop.find(proc)
 
     assert_kind_of Prism::CallNode, node
@@ -26,7 +33,7 @@ class FindTest < Minitest::Test
   end
 
   def test_find_proc_1
-    proc = SIMPLE_PROC_1
+    proc = load_code(:proc_1)
     node = Sirop.find(proc)
 
     assert_kind_of Prism::CallNode, node
@@ -35,7 +42,7 @@ class FindTest < Minitest::Test
   end
 
   def test_find_proc_2
-    proc = SIMPLE_PROC_2
+    proc = load_code(:proc_2)
     node = Sirop.find(proc)
 
     assert_kind_of Prism::CallNode, node
