@@ -33,8 +33,8 @@ module Sirop
 
     def adjust_whitespace(loc)
       if @last_loc_start
-        if @last_loc_start.first != loc.start_line
-          @buffer << "\n"
+        if @last_loc_end.first != loc.start_line
+          @buffer << "\n" * (loc.start_line - @last_loc_end.first)
           @buffer << ' ' * loc.start_column
         else
           ofs = loc.start_column - @last_loc_end.last
@@ -73,7 +73,7 @@ module Sirop
     end
   
     def method_missing(sym, node, *args)
-      p method_missing: sym
+      raise NotImplementedError, "Don't know how to handle #{sym}"
       visit_child_nodes(node)
     end
 
@@ -85,6 +85,7 @@ module Sirop
     EMIT_VERBATIM_NODE_TYPES = %w{
       integer
       local_variable_read
+      nil
       required_parameter
       string
       symbol
@@ -107,6 +108,7 @@ module Sirop
   
     def visit_call_node(node)
       emit_code(node.receiver.location) if node.receiver
+      emit_code(node.call_operator_loc)
       emit_code(node.message_loc)
       emit_code(node.opening_loc)
       visit(node.arguments)
@@ -127,25 +129,24 @@ module Sirop
       emit_code(node.closing_loc)
     end
 
+    def visit_comma_separated_nodes(list, comma = false)
+      if list
+        list.each_with_index do |child, idx|
+          emit_comma if comma
+          visit(child)
+          comma = true
+        end
+      end
+      comma
+    end
+
     def visit_parameters_node(node)
-      comma = false
-      node.requireds&.each_with_index do |n|
-        emit_comma if comma
-        visit(n)
-        comma = true
-      end
-      node.optionals&.each_with_index do |n|
-        emit_comma if comma
-        visit(n)
-        comma = true
-      end
+      comma = visit_comma_separated_nodes(node.requireds)
+      visit_comma_separated_nodes(node.optionals, comma)
     end
   
     def visit_arguments_node(node)
-      node.arguments.each_with_index do |child, idx|
-        emit_comma if idx > 0
-        visit(child)
-      end
+      visit_comma_separated_nodes(node.arguments)
     end
   
     def visit_keyword_hash_node(node)
@@ -193,5 +194,32 @@ module Sirop
       visit(node.body)
       emit_code(node.closing_loc)
     end
-  end  
+
+    def visit_case_node(node)
+      emit_code(node.case_keyword_loc)
+      visit(node.predicate)
+      node.conditions.each { |c| visit(c) }
+      visit(node.consequent)
+      emit_code(node.end_keyword_loc)
+    end
+
+    def visit_when_node(node)
+      emit_code(node.keyword_loc)
+      visit_comma_separated_nodes(node.conditions)
+      visit(node.statements)
+    end
+
+    def visit_interpolated_symbol_node(node)
+      emit_code(node.opening_loc)
+      node.parts.each { |p| visit(p) }
+      emit_code(node.closing_loc)
+    end
+    alias_method :visit_interpolated_string_node, :visit_interpolated_symbol_node
+
+    def visit_embedded_statements_node(node)
+      emit_code(node.opening_loc)
+      visit(node.statements)
+      emit_code(node.closing_loc)
+    end
+  end
 end
