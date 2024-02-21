@@ -30,23 +30,4 @@ class RewriteDSLTest < Minitest::Test
       assert_equal compiled_src, result
     }
   end
-
-
-  # def test_dsl_rewrite_simple
-
-  #   @b = ->(items) {
-  #     h1 'foo'
-  #     h2 'bar'
-  #     h3 'baz'
-  #   }
-
-  #   node = Sirop.find(@b)
-  #   source = DSLRewriter.new.rewrite(node)
-
-  #   puts '$' * 40
-  #   puts
-  #   puts source
-  #   puts
-  #   exit!
-  # end
 end
