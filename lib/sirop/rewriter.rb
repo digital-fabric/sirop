@@ -5,9 +5,15 @@ require 'prism'
 module Sirop
   class Rewriter < Prism::BasicVisitor
     attr_reader :buffer
-  
+
     def initialize
       @buffer = +''
+    end
+  
+    def rewrite(node)
+      @buffer.clear
+      visit(node)
+      @buffer
     end
   
     def loc_start(loc)
@@ -17,39 +23,52 @@ module Sirop
     def loc_end(loc)
       [loc.end_line, loc.end_column]
     end
+
+    def before_emit
+    end
+
+    def emit(str)
+      @buffer << str
+    end
+
+    def adjust_whitespace(loc)
+      if @last_loc_start
+        if @last_loc_start.first != loc.start_line
+          @buffer << "\n"
+          buffer << ' ' * loc.start_column
+        else
+          ofs = loc.start_column - @last_loc_end.last
+          if ofs > 0
+            buffer << ' ' * ofs
+          end
+        end
+      else
+        # empty buffer
+        buffer << ' ' * loc.start_column
+      end
+      @last_loc_start = loc_start(loc)
+      @last_loc_end = loc_end(loc)
+    end
+
+    def emit_code(loc, str = nil)
+      return if !loc
+
+      str ||= loc.slice
+      before_emit
+      adjust_whitespace(loc)
+      emit(str)
+    end
   
     def emit_verbatim(node)
       emit_code(node.location)
     end
   
-    def emit_code(loc, str = nil)
-      return if !loc
-
-      str ||= loc.slice
-      # p emit: loc, start: loc_start(loc), end: loc_end(loc), str: loc.slice
-      if @last_loc_start
-        if @last_loc_start.first != loc.start_line
-          @buffer << "\n"
-          @buffer << ' ' * loc.start_column
-        else
-          ofs = loc.start_column - @last_loc_end.last
-          if ofs > 0
-            @buffer << ' ' * ofs
-          end
-        end
-      else
-        # empty buffer
-        @buffer << ' ' * loc.start_column
-      end
-      @last_loc_start = loc_start(loc)
-      @last_loc_end = loc_end(loc)
-      @buffer << str
-    end
-  
     def emit_comma
+      before_emit
+
       # somewhat hacky - we insert a comma in there, and increment the last
       # column
-      @buffer << ','
+      emit ','
       @last_loc_end[1] += 1
     end
   
@@ -67,6 +86,7 @@ module Sirop
       integer
       local_variable_read
       required_parameter
+      string
       symbol
     }
 

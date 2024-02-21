@@ -16,9 +16,7 @@ module Sirop
     end
 
     def to_source(node)
-      r = Rewriter.new
-      r.visit(node)
-      r.buffer
+      Rewriter.new.rewrite(node)
     end
 
     private
