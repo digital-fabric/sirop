@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'prism'
-require 'sirop/block_finder'
+require 'sirop/proc_finder'
 require 'sirop/rewriter'
 
 module Sirop
@@ -26,7 +26,7 @@ module Sirop
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
     
-      finder = Sirop::BlockFinder.new(proc, lineno)
+      finder = Sirop::ProcFinder.new(proc, lineno)
       finder.find(program)
     end
   end
