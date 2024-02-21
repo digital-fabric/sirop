@@ -61,16 +61,7 @@ class DSLRewriter < Sirop::Rewriter
     return super if node.receiver
 
     @html_location_start ||= node.location
-    args = node.arguments&.arguments
-    if args
-      if args[0]&.is_a?(Prism::KeywordHashNode)
-        inner_text, attrs = nil, args[0]
-      elsif args[1]&.is_a?(Prism::KeywordHashNode)
-        inner_text, attrs = args
-      else
-        inner_text, args = (args && args[0]), nil
-      end
-    end
+    inner_text, attrs = tag_args(node)
     block = node.block
 
     if inner_text
@@ -85,6 +76,19 @@ class DSLRewriter < Sirop::Rewriter
       emit_tag_open_close(node, attrs)
     end
     @html_location_end = node.location
+  end
+
+  def tag_args(node)
+    args = node.arguments&.arguments
+    return nil if !args
+
+    if args[0]&.is_a?(Prism::KeywordHashNode)
+      [nil, args[0]]
+    elsif args[1]&.is_a?(Prism::KeywordHashNode)
+      args
+    else
+      [args && args[0], nil]
+    end
   end
 
   def emit_tag_open(node, attrs)
