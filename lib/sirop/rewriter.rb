@@ -53,6 +53,11 @@ module Sirop
       @last_loc_end[1] += 1
     end
   
+    def method_missing(sym, node, *args)
+      p method_missing: sym
+      visit_child_nodes(node)
+    end
+
     VISIT_CHILDREN_NODE_TYPES = %w{
       assoc
       statements
@@ -65,6 +70,13 @@ module Sirop
       symbol
     }
 
+    VISIT_CHILDREN_NODE_TYPES.each do |sym|
+      alias_method :"visit_#{sym}_node", :visit_child_nodes
+    end
+    EMIT_VERBATIM_NODE_TYPES.each do |sym|
+      alias_method :"visit_#{sym}_node", :emit_verbatim
+    end
+  
     def visit_lambda_node(node)
       emit_code(node.operator_loc)
       visit(node.parameters) if node.parameters
@@ -123,16 +135,43 @@ module Sirop
       end
     end
 
-    VISIT_CHILDREN_NODE_TYPES.each do |sym|
-      alias_method :"visit_#{sym}_node", :visit_child_nodes
+    def visit_if_node(node)
+      if !node.if_keyword_loc
+        return visit_if_node_ternary(node)
+      elsif !node.end_keyword_loc
+        return visit_if_node_guard(node)
+      end
+
+      emit_code(node.if_keyword_loc)
+      visit(node.predicate)
+      emit_code(node.then_keyword_loc)
+      visit(node.statements)
+      visit(node.consequent) if node.consequent
+      emit_code(node.end_keyword_loc) if node.if_keyword_loc.slice == 'if'
     end
-    EMIT_VERBATIM_NODE_TYPES.each do |sym|
-      alias_method :"visit_#{sym}_node", :emit_verbatim
+
+    def visit_if_node_ternary(node)
+      visit(node.predicate)
+      emit_code(node.then_keyword_loc)
+      visit(node.statements)
+      visit(node.consequent)
     end
-  
-    def method_missing(sym, node, *args)
-      p method_missing: sym
-      visit_child_nodes(node)
+
+    def visit_if_node_guard(node)
+      visit(node.statements)        
+      emit_code(node.if_keyword_loc)
+      visit(node.predicate)
+    end
+
+    def visit_else_node(node)
+      emit_code(node.else_keyword_loc)
+      visit(node.statements)
+    end
+
+    def visit_parentheses_node(node)
+      emit_code(node.opening_loc)
+      visit(node.body)
+      emit_code(node.closing_loc)
     end
   end  
 end

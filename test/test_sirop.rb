@@ -60,8 +60,13 @@ class RewriteVerbatimTest < Minitest::Test
     define_method(:"test_rewrite_verbatim_#{name}") {
       proc = eval(src, binding, fn)
       node = Sirop.find(proc)
+      assert_kind_of Prism::Node, node
 
-      assert_equal src.chomp, Sirop.to_source(node)
+      p node if ENV['DEBUG'] == '1'
+      code = Sirop.to_source(node)
+      puts code if ENV['DEBUG'] == '1'
+
+      assert_equal src.chomp, code
     }
   end
 end
