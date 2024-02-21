@@ -47,11 +47,13 @@ class DSLRewriter < Sirop::Rewriter
     return if @html_buffer.empty?
 
     if !@html_buffer.empty?
-      adjust_whitespace(@html_location) if @html_location
+      adjust_whitespace(@html_location_start) if @html_location_start
       @buffer << "__buffer__ << \"#{@html_buffer}\""
       @html_buffer.clear
+      @last_loc_end = loc_end(@html_location_end) if @html_location_end
     end
-    @html_location = nil
+    @html_location_start = nil
+    @html_location_end = nil
   end
 
   def visit_statements_node(node)
@@ -65,7 +67,7 @@ class DSLRewriter < Sirop::Rewriter
   def visit_call_node(node)
     return super if node.receiver
 
-    @html_location ||= node.location
+    @html_location_start ||= node.location
     if node.block
       visit_call_node_with_block(node)
     elsif node.arguments
@@ -75,6 +77,7 @@ class DSLRewriter < Sirop::Rewriter
     else
       emit_html("<#{node.name}/>")
     end
+    @html_location_end = node.location
   end
 
   def visit_call_node_with_block(node)
