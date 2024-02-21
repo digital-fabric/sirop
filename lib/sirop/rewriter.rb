@@ -73,6 +73,8 @@ module Sirop
     end
   
     def method_missing(sym, node, *args)
+      puts '!' * 40
+      p node
       raise NotImplementedError, "Don't know how to handle #{sym}"
       visit_child_nodes(node)
     end
@@ -142,7 +144,44 @@ module Sirop
 
     def visit_parameters_node(node)
       comma = visit_comma_separated_nodes(node.requireds)
-      visit_comma_separated_nodes(node.optionals, comma)
+      comma = visit_comma_separated_nodes(node.optionals, comma)
+      comma = visit_comma_separated_nodes(node.posts, comma)
+      if node.rest
+        emit_comma if comma
+        comma = true
+        visit(node.rest)
+      end
+      if node.keyword_rest
+        emit_comma if comma
+        comma = true
+        visit(node.keyword_rest)
+      end
+      if node.block
+        emit_comma if comma
+        comma = true
+        visit(node.block)
+      end
+    end
+
+    def visit_optional_parameter_node(node)
+      emit_code(node.name_loc)
+      emit_code(node.operator_loc)
+      visit(node.value)
+    end
+
+    def visit_rest_parameter_node(node)
+      emit_code(node.operator_loc)
+      emit_code(node.name_loc)
+    end
+    
+    def visit_keyword_rest_parameter_node(node)
+      emit_code(node.operator_loc)
+      emit_code(node.name_loc)
+    end
+
+    def visit_block_parameter_node(node)
+      emit_code(node.operator_loc)
+      emit_code(node.name_loc)
     end
   
     def visit_arguments_node(node)
@@ -220,6 +259,22 @@ module Sirop
       emit_code(node.opening_loc)
       visit(node.statements)
       emit_code(node.closing_loc)
+    end
+
+    def visit_splat_node(node)
+      emit_code(node.operator_loc)
+      visit(node.expression)
+    end
+
+    def visit_assoc_splat_node(node)
+      emit_code(node.operator_loc)
+      visit(node.value)
+    end
+
+    def visit_local_variable_write_node(node)
+      emit_code(node.name_loc)
+      emit_code(node.operator_loc)
+      visit(node.value)
     end
   end
 end
