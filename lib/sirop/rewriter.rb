@@ -35,16 +35,16 @@ module Sirop
       if @last_loc_start
         if @last_loc_start.first != loc.start_line
           @buffer << "\n"
-          buffer << ' ' * loc.start_column
+          @buffer << ' ' * loc.start_column
         else
           ofs = loc.start_column - @last_loc_end.last
           if ofs > 0
-            buffer << ' ' * ofs
+            @buffer << ' ' * ofs
           end
         end
       else
         # empty buffer
-        buffer << ' ' * loc.start_column
+        @buffer << ' ' * loc.start_column
       end
       @last_loc_start = loc_start(loc)
       @last_loc_end = loc_end(loc)
