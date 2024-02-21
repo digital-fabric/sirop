@@ -97,9 +97,9 @@ module Sirop
       required_parameter:     :emit_verbatim,
       rest_parameter:         [:operator_loc, :name_loc],
       splat:                  [:operator_loc, :expression],
-      statements: :visit_child_nodes,
-      string: :emit_verbatim,
-      symbol: :emit_verbatim,
+      statements:             :visit_child_nodes,
+      string:                 :emit_verbatim,
+      symbol:                 :emit_verbatim,
     }
 
     VISIT_PLANS.each do |key, plan|
