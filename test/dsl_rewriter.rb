@@ -1,3 +1,4 @@
+# An example HTML template DSL rewriter
 class DSLRewriter < Sirop::Rewriter
   def initialize
     super
@@ -19,20 +20,20 @@ class DSLRewriter < Sirop::Rewriter
     end
   end
 
-  def embed(pre = '', post = '')
+  def embed_visit(node, pre = '', post = '')
     @embed_mode = true
     @embed_buffer = +''
-    yield
+    visit(node)
     @embed_mode = false
     @html_buffer << "#{pre}#{@embed_buffer}#{post}"
   end
 
-  def html_embed(&)
-    embed('\#{CGI.escapeHTML(', ')}', &)
+  def html_embed_visit(node)
+    embed_visit(node, '\#{CGI.escapeHTML(', ')}')
   end
 
-  def tag_attr_embed(&)
-    embed('\#{', '}', &)
+  def tag_attr_embed(node)
+    embed_visit(node, '\#{', '}')
   end
 
   def emit_code(loc, str = nil)
@@ -112,7 +113,7 @@ class DSLRewriter < Sirop::Rewriter
     when Prism::StringNode, Prism::SymbolNode
       @html_buffer << CGI.escapeHTML(node.unescaped)
     else
-      html_embed { visit(node) }
+      html_embed_visit(node)
     end
   end
 
@@ -131,7 +132,7 @@ class DSLRewriter < Sirop::Rewriter
     when Prism::StringNode, Prism::SymbolNode
       @html_buffer << node.unescaped
     else
-      tag_attr_embed { visit(node) }
+      tag_attr_embed_visit(node)
     end
   end
 end
