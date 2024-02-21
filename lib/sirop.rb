@@ -2,6 +2,7 @@
 
 require 'prism'
 require 'sirop/block_finder'
+require 'sirop/rewriter'
 
 module Sirop
   class << self
@@ -14,6 +15,14 @@ module Sirop
       end
     end
 
+    def to_source(node)
+      r = Rewriter.new
+      r.visit(node)
+      r.buffer
+    end
+
+    private
+
     def find_proc(proc)
       fn, lineno = proc.source_location  
       pr = Prism.parse(IO.read(fn), filepath: fn)
@@ -22,6 +31,5 @@ module Sirop
       finder = Sirop::BlockFinder.new(proc, lineno)
       finder.find(program)
     end
-  
   end
 end

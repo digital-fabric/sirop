@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'prism'
+
 module Sirop
   class BlockFinder < Prism::BasicVisitor
     attr_accessor :block_node
