@@ -18,7 +18,7 @@ class RewriteDSLTest < Minitest::Test
     original_src = IO.read(fn).chomp
     compiled_src = IO.read(compiled_fn).chomp
 
-    define_method(:"test_rewrite_dsl_#{name}") {
+    define_method(:"test_rewrite_dsl_#{name}") do
       proc = eval(original_src, binding, fn)
       node = Sirop.find(proc)
       assert_kind_of Prism::Node, node
@@ -28,6 +28,6 @@ class RewriteDSLTest < Minitest::Test
       puts result if ENV['DEBUG'] == '1'
 
       assert_equal compiled_src, result
-    }
+    end
   end
 end
