@@ -4,7 +4,7 @@ require_relative './helper'
 require_relative './dsl_rewriter'
 require 'cgi'
 
-class RewriteDSLTest < Minitest::Test
+class DSLRewriterTest < Minitest::Test
 
   DSL_EXAMPLES_PATH = File.join(EXAMPLES_PATH, 'dsl/original')
   DSL_COMPILED_BASE_PATH = File.join(EXAMPLES_PATH, 'dsl/compiled')
