@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative './helper'
-require_relative './examples/methods'
+require_relative './fixtures/methods'
 
 class PrismTest < Minitest::Test
   def test_find_lambda_1

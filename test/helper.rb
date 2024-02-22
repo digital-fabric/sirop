@@ -4,7 +4,7 @@ require 'bundler/setup'
 require 'minitest/autorun'
 require 'sirop'
 
-EXAMPLES_PATH = File.join(__dir__, 'examples')
+EXAMPLES_PATH = File.join(__dir__, 'fixtures')
 
 module Kernel
   def load_code(name)
