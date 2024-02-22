@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'prism'
-require 'sirop/proc_finder'
-require 'sirop/method_finder'
+require 'sirop/prism_ext'
+require 'sirop/finder'
 require 'sirop/rewriter'
 
 module Sirop
@@ -32,18 +32,33 @@ module Sirop
       fn, lineno = proc.source_location  
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
-    
-      finder = Sirop::ProcFinder.new(proc, lineno)
-      finder.find(program)
+
+      Finder.find(program, proc) do
+        on(:lambda) do |node|
+          found!(node) if node.location.start_line == lineno
+          super(node)
+        end
+        on(:call) do |node|
+          case node.name
+          when :proc, :lambda
+            found!(node) if node.block && node.block.location.start_line == lineno
+          end
+          super(node)
+        end
+      end
     end
 
     def method_ast(method)
       fn, lineno = method.source_location
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
-    
-      finder = Sirop::MethodFinder.new(method, lineno)
-      finder.find(program)
+
+      Finder.find(program, method) do
+        on(:def) do |node|
+          found!(node) if node.name == method.name && node.location.start_line == lineno
+          super(node)
+        end
+      end
     end
   end
 end
