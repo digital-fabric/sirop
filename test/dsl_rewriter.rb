@@ -40,7 +40,7 @@ class DSLRewriter < Sirop::Rewriter
     embed_visit(node, '\#{', '}')
   end
 
-  def emit_code(loc, str = nil)
+  def emit_code(loc, semicolon: false)
     flush_html_buffer
     super
   end

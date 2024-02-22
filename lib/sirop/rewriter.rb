@@ -48,12 +48,14 @@ module Sirop
       @last_loc_end = loc_end(loc)
     end
 
-    def emit_code(loc, str = nil)
+    def emit_code(loc, semicolon: false)
       return if !loc
 
-      str ||= loc.slice
+      emit_semicolon(loc) if semicolon
+      return visit(loc) if loc.is_a?(Prism::Node)
+
       adjust_whitespace(loc)
-      emit(str)
+      emit(loc.slice)
     end
   
     def emit_verbatim(node)
@@ -132,16 +134,8 @@ module Sirop
         end
 
         obj = node.send(sym)
-        if insert_semicolon
-          emit_semicolon(obj)
-          insert_semicolon = false
-        end
-        case obj
-        when Prism::Node
-          visit(obj)
-        when Prism::Location
-          emit_code(obj)
-        end
+        emit_code(obj, semicolon: insert_semicolon)
+        insert_semicolon = false
       end
     end
 
@@ -149,7 +143,7 @@ module Sirop
       if list
         list.each_with_index do |child, idx|
           emit_comma if comma
-          visit(child)
+          emit_code(child)
           comma = true
         end
       end
@@ -163,17 +157,17 @@ module Sirop
       if node.rest
         emit_comma if comma
         comma = true
-        visit(node.rest)
+        emit_code(node.rest)
       end
       if node.keyword_rest
         emit_comma if comma
         comma = true
-        visit(node.keyword_rest)
+        emit_code(node.keyword_rest)
       end
       if node.block
         emit_comma if comma
         comma = true
-        visit(node.block)
+        emit_code(node.block)
       end
     end
 
@@ -193,43 +187,43 @@ module Sirop
       end
 
       emit_code(node.if_keyword_loc)
-      visit(node.predicate)
+      emit_code(node.predicate)
       emit_code(node.then_keyword_loc)
-      visit(node.statements)
-      visit(node.consequent) if node.consequent
+      emit_code(node.statements)
+      emit_code(node.consequent) if node.consequent
       emit_code(node.end_keyword_loc) if node.if_keyword_loc.slice == 'if'
     end
 
     def visit_if_node_ternary(node)
-      visit(node.predicate)
+      emit_code(node.predicate)
       emit_code(node.then_keyword_loc)
-      visit(node.statements)
-      visit(node.consequent)
+      emit_code(node.statements)
+      emit_code(node.consequent)
     end
 
     def visit_if_node_guard(node)
-      visit(node.statements)        
+      emit_code(node.statements)        
       emit_code(node.if_keyword_loc)
-      visit(node.predicate)
+      emit_code(node.predicate)
     end
 
     def visit_case_node(node)
       emit_code(node.case_keyword_loc)
-      visit(node.predicate)
-      node.conditions.each { |c| visit(c) }
-      visit(node.consequent)
+      emit_code(node.predicate)
+      node.conditions.each { |c| emit_code(c) }
+      emit_code(node.consequent)
       emit_code(node.end_keyword_loc)
     end
 
     def visit_when_node(node)
       emit_code(node.keyword_loc)
       visit_comma_separated_nodes(node.conditions)
-      visit(node.statements)
+      emit_code(node.statements)
     end
 
     def visit_interpolated_symbol_node(node)
       emit_code(node.opening_loc)
-      node.parts.each { |p| visit(p) }
+      node.parts.each { |p| emit_code(p) }
       emit_code(node.closing_loc)
     end
     alias_method :visit_interpolated_string_node, :visit_interpolated_symbol_node
@@ -241,16 +235,13 @@ module Sirop
 
       if node.parameters
         emit_str('(')
-        visit(node.parameters)
+        emit_code(node.parameters)
         emit_str(')')
         last_loc = node.parameters.location
       end
 
-      emit_semicolon(node.body)
-      visit(node.body)
-
-      emit_semicolon(node.end_keyword_loc)
-      emit_code(node.end_keyword_loc)
+      emit_code(node.body, semicolon: true)
+      emit_code(node.end_keyword_loc, semicolon: true)
     end
 
     def visit_call_node(node)
@@ -260,41 +251,39 @@ module Sirop
 
       block = node.block
 
-      visit(node.receiver)
+      emit_code(node.receiver)
       emit_code(node.call_operator_loc)
       emit_code(node.message_loc)
       emit_code(node.opening_loc)
-      visit(node.arguments)
+      emit_code(node.arguments)
       
       if block.is_a?(Prism::BlockArgumentNode)
         emit_comma if node.arguments&.arguments.size > 0
-        visit(block)
+        emit_code(block)
         block = nil
       end
       emit_code(node.closing_loc)
-      visit(block)
+      emit_code(block)
     end
 
     def visit_call_node_unary_op(node)
       emit_code(node.message_loc)
-      visit(node.receiver)
+      emit_code(node.receiver)
     end
 
     def visit_while_node(node)
       return visit_while_node_guard(node) if !node.closing_loc
 
       emit_code(node.keyword_loc)
-      visit(node.predicate)
-      emit_semicolon(node.statements)
-      visit(node.statements)
-      emit_semicolon(node.closing_loc)
-      emit_code(node.closing_loc)
+      emit_code(node.predicate)
+      emit_code(node.statements, semicolon: true)
+      emit_code(node.closing_loc, semicolon: true)
     end
 
     def visit_while_node_guard(node)
-      visit(node.statements)
+      emit_code(node.statements)
       emit_code(node.keyword_loc)
-      visit(node.predicate)
+      emit_code(node.predicate)
     end
   end
 end
