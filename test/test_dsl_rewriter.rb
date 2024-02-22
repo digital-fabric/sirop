@@ -20,7 +20,7 @@ class DSLRewriterTest < Minitest::Test
 
     define_method(:"test_rewrite_dsl_#{name}") do
       proc = eval(original_src, binding, fn)
-      node = Sirop.find(proc)
+      node = Sirop.to_ast(proc)
       assert_kind_of Prism::Node, node
 
       p node if ENV['DEBUG'] == '1'

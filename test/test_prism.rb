@@ -4,36 +4,36 @@ require_relative './helper'
 require_relative './fixtures/methods'
 
 class PrismTest < Minitest::Test
-  def test_find_lambda_1
+  def test_to_ast_lambda_1
     proc = load_code('find')[:lambda_1]
-    node = Sirop.find(proc)
+    node = Sirop.to_ast(proc)
 
     assert_kind_of Prism::LambdaNode, node
     assert_equal proc.source_location[1], node.location.start_line
     assert_equal '->(x) { x + 1 }', node.slice
   end
 
-  def test_find_lambda_2
+  def test_to_ast_lambda_2
     proc = load_code('find')[:lambda_2]
-    node = Sirop.find(proc)
+    node = Sirop.to_ast(proc)
 
     assert_kind_of Prism::CallNode, node
     assert_equal proc.source_location[1], node.location.start_line
     assert_equal 'lambda { |x, y| x + y }', node.slice
   end
 
-  def test_find_proc_1
+  def test_to_ast_proc_1
     proc = load_code('find')[:proc_1]
-    node = Sirop.find(proc)
+    node = Sirop.to_ast(proc)
 
     assert_kind_of Prism::CallNode, node
     assert_equal proc.source_location[1], node.location.start_line
     assert_equal "proc {\n    :foo\n  }", node.slice
   end
 
-  def test_find_proc_2
+  def test_to_ast_proc_2
     proc = load_code('find')[:proc_2]
-    node = Sirop.find(proc)
+    node = Sirop.to_ast(proc)
 
     assert_kind_of Prism::CallNode, node
     assert_equal proc.source_location[1], node.location.start_line
@@ -53,28 +53,28 @@ class PrismTest < Minitest::Test
     end
   end
   
-  def test_find_method
+  def test_to_ast_method
     f = Foo.new
 
     m = f.method(:foo)
-    node = Sirop.find(m)
+    node = Sirop.to_ast(m)
     assert_kind_of Prism::DefNode, node
     assert_equal "def foo; :foo; end", node.slice
 
     m = f.method(:bar)
-    node = Sirop.find(m)
+    node = Sirop.to_ast(m)
     assert_kind_of Prism::DefNode, node
     assert_equal "def bar(x)\n      p x\n      yield\n    end", node.slice
   end
 
-  def test_find_unbound_method
+  def test_to_ast_unbound_method
     m = Foo.instance_method(:foo)
-    node = Sirop.find(m)
+    node = Sirop.to_ast(m)
     assert_kind_of Prism::DefNode, node
     assert_equal "def foo; :foo; end", node.slice
 
     m = Foo.instance_method(:bar)
-    node = Sirop.find(m)
+    node = Sirop.to_ast(m)
     assert_kind_of Prism::DefNode, node
     assert_equal "def bar(x)\n      p x\n      yield\n    end", node.slice
   end

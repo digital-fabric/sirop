@@ -7,12 +7,12 @@ require 'sirop/rewriter'
 
 module Sirop
   class << self
-    def find(obj)
+    def to_ast(obj)
       case obj
       when Proc
-        find_proc(obj)
+        proc_ast(obj)
       when UnboundMethod, Method
-        find_method(obj)
+        method_ast(obj)
       else
         raise ArgumentError, "Invalid object type"
       end
@@ -23,12 +23,12 @@ module Sirop
     end
 
     def to_string(obj)
-      to_source(find(obj))
+      to_source(to_ast(obj))
     end
 
     private
 
-    def find_proc(proc)
+    def proc_ast(proc)
       fn, lineno = proc.source_location  
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
@@ -37,7 +37,7 @@ module Sirop
       finder.find(program)
     end
 
-    def find_method(method)
+    def method_ast(method)
       fn, lineno = method.source_location
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
