@@ -43,6 +43,7 @@ module Sirop
         # empty buffer
         @buffer << ' ' * loc.start_column
       end
+      @last_loc = loc
       @last_loc_start = loc_start(loc)
       @last_loc_end = loc_end(loc)
     end
@@ -65,17 +66,12 @@ module Sirop
     end
   
     def emit_comma
-      # somewhat hacky - we insert a comma in there, and increment the last
-      # column
-      emit(',')
-      @last_loc_end[1] += 1
+      emit_str(',')
     end
 
-    def emit_semicolon
-      # somewhat hacky - we insert a comma in there, and increment the last
-      # column
-      emit(';')
-      @last_loc_end[1] += 1
+    def emit_semicolon(loc)
+      loc = loc.location if loc.is_a?(Prism::Node)
+      emit_str(';') if loc.start_line == @last_loc.end_line
     end
 
     def method_missing(sym, node, *args)
@@ -86,24 +82,29 @@ module Sirop
     end
 
     VISIT_PLANS = {
+      and:                    [:left, :operator_loc, :right],
       assoc:                  :visit_child_nodes,
       assoc_splat:            [:operator_loc, :value],
       block:                  [:opening_loc, :parameters, :body, :closing_loc],
       block_argument:         [:operator_loc, :expression],
       block_parameter:        [:operator_loc, :name_loc],
       block_parameters:       [:opening_loc, :parameters, :closing_loc],
+      break:                  [:keyword_loc, :arguments],
       constant_path:          [:parent, :delimiter_loc, :child],
       constant_read:          :emit_verbatim,
       else:                   [:else_keyword_loc, :statements],
       embedded_statements:    [:opening_loc, :statements, :closing_loc],
+      false:                  :emit_verbatim,
       integer:                :emit_verbatim,
       keyword_rest_parameter: [:operator_loc, :name_loc],
       lambda:                 [:operator_loc, :parameters, :opening_loc, :body,
                                :closing_loc],
       local_variable_read:    :emit_verbatim,
       local_variable_write:   [:name_loc, :operator_loc, :value],
+      next:                   [:keyword_loc, :arguments],
       nil:                    :emit_verbatim,
       optional_parameter:     [:name_loc, :operator_loc, :value],
+      or:                     [:left, :operator_loc, :right],
       parentheses:            [:opening_loc, :body, :closing_loc],
       required_parameter:     :emit_verbatim,
       rest_parameter:         [:operator_loc, :name_loc],
@@ -111,24 +112,30 @@ module Sirop
       statements:             :visit_child_nodes,
       string:                 :emit_verbatim,
       symbol:                 :emit_verbatim,
+      true:                   :emit_verbatim,
       yield:                  [:keyword_loc, :lparen_loc, :arguments, :rparen_loc],
     }
 
     VISIT_PLANS.each do |key, plan|
       sym = :"visit_#{key}_node"
-      case plan
-      when Array
-        define_method(sym) { |n| visit_plan(plan, n) }
-      when Symbol
-        alias_method(sym, plan)
-      else
-        raise NotImplementedError, "Invalid visit plan"
-      end
+      define_method(sym) { |n| visit_plan(plan, n) }
     end
   
     def visit_plan(plan, node)
-      plan.each do |sym|
+      return send(plan, node) if plan.is_a?(Symbol)
+
+      insert_semicolon = false
+      plan.each_with_index do |sym, idx|
+        if sym == :semicolon
+          insert_semicolon = true
+          next
+        end
+
         obj = node.send(sym)
+        if insert_semicolon
+          emit_semicolon(obj)
+          insert_semicolon = false
+        end
         case obj
         when Prism::Node
           visit(obj)
@@ -239,17 +246,18 @@ module Sirop
         last_loc = node.parameters.location
       end
 
-      if node.body.location.start_line == last_loc.end_line
-        emit_semicolon
-      end
+      emit_semicolon(node.body)
       visit(node.body)
-      if node.end_keyword_loc.start_line == node.body.location.end_line
-        emit_semicolon
-      end
+
+      emit_semicolon(node.end_keyword_loc)
       emit_code(node.end_keyword_loc)
     end
 
     def visit_call_node(node)
+      if node.receiver && !node.call_operator_loc && !node.arguments
+        return visit_call_node_unary_op(node)
+      end
+
       block = node.block
 
       visit(node.receiver)
@@ -265,6 +273,28 @@ module Sirop
       end
       emit_code(node.closing_loc)
       visit(block)
+    end
+
+    def visit_call_node_unary_op(node)
+      emit_code(node.message_loc)
+      visit(node.receiver)
+    end
+
+    def visit_while_node(node)
+      return visit_while_node_guard(node) if !node.closing_loc
+
+      emit_code(node.keyword_loc)
+      visit(node.predicate)
+      emit_semicolon(node.statements)
+      visit(node.statements)
+      emit_semicolon(node.closing_loc)
+      emit_code(node.closing_loc)
+    end
+
+    def visit_while_node_guard(node)
+      visit(node.statements)
+      emit_code(node.keyword_loc)
+      visit(node.predicate)
     end
   end
 end
