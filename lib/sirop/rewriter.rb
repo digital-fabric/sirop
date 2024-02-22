@@ -58,14 +58,26 @@ module Sirop
     def emit_verbatim(node)
       emit_code(node.location)
     end
+
+    def emit_str(str)
+      emit(str)
+      @last_loc_end[1] += str.size
+    end
   
     def emit_comma
       # somewhat hacky - we insert a comma in there, and increment the last
       # column
-      emit ','
+      emit(',')
       @last_loc_end[1] += 1
     end
-  
+
+    def emit_semicolon
+      # somewhat hacky - we insert a comma in there, and increment the last
+      # column
+      emit(';')
+      @last_loc_end[1] += 1
+    end
+
     def method_missing(sym, node, *args)
       puts '!' * 40
       p node
@@ -77,10 +89,9 @@ module Sirop
       assoc:                  :visit_child_nodes,
       assoc_splat:            [:operator_loc, :value],
       block:                  [:opening_loc, :parameters, :body, :closing_loc],
-      block_parameters:       [:opening_loc, :parameters, :closing_loc],
+      block_argument:         [:operator_loc, :expression],
       block_parameter:        [:operator_loc, :name_loc],
-      call:                   [:receiver, :call_operator_loc, :message_loc,
-                               :opening_loc, :arguments, :closing_loc, :block],
+      block_parameters:       [:opening_loc, :parameters, :closing_loc],
       constant_path:          [:parent, :delimiter_loc, :child],
       constant_read:          :emit_verbatim,
       else:                   [:else_keyword_loc, :statements],
@@ -100,6 +111,7 @@ module Sirop
       statements:             :visit_child_nodes,
       string:                 :emit_verbatim,
       symbol:                 :emit_verbatim,
+      yield:                  [:keyword_loc, :lparen_loc, :arguments, :rparen_loc],
     }
 
     VISIT_PLANS.each do |key, plan|
@@ -214,5 +226,45 @@ module Sirop
       emit_code(node.closing_loc)
     end
     alias_method :visit_interpolated_string_node, :visit_interpolated_symbol_node
+
+    def visit_def_node(node)
+      emit_code(node.def_keyword_loc)
+      emit_code(node.name_loc)
+      last_loc = node.name_loc
+
+      if node.parameters
+        emit_str('(')
+        visit(node.parameters)
+        emit_str(')')
+        last_loc = node.parameters.location
+      end
+
+      if node.body.location.start_line == last_loc.end_line
+        emit_semicolon
+      end
+      visit(node.body)
+      if node.end_keyword_loc.start_line == node.body.location.end_line
+        emit_semicolon
+      end
+      emit_code(node.end_keyword_loc)
+    end
+
+    def visit_call_node(node)
+      block = node.block
+
+      visit(node.receiver)
+      emit_code(node.call_operator_loc)
+      emit_code(node.message_loc)
+      emit_code(node.opening_loc)
+      visit(node.arguments)
+      
+      if block.is_a?(Prism::BlockArgumentNode)
+        emit_comma if node.arguments&.arguments.size > 0
+        visit(block)
+        block = nil
+      end
+      emit_code(node.closing_loc)
+      visit(block)
+    end
   end
 end

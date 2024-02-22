@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+require 'cgi'
+
 # An example HTML template DSL rewriter
 class DSLRewriter < Sirop::Rewriter
   def initialize
