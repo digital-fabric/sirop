@@ -3,13 +3,13 @@
 require 'cgi'
 
 # An example HTML template DSL rewriter
-class DSLRewriter < Sirop::Rewriter
+class DSLRewriter < Sirop::Sourcifier
   def initialize
     super
     @html_buffer = +''
   end
 
-  def rewrite(node)
+  def to_source(node)
     @buffer.clear
     @html_buffer.clear
     visit(node)

@@ -80,13 +80,13 @@ class PrismTest < Minitest::Test
   end
 
   def test_to_string
-    str = Sirop.to_string(Foo.instance_method(:foo))
+    str = Sirop.to_source(Foo.instance_method(:foo))
     assert_equal "def foo; :foo; end", str.strip
 
-    str = Sirop.to_string(Foo.instance_method(:bar))
+    str = Sirop.to_source(Foo.instance_method(:bar))
     assert_equal "def bar(x)\n      p x\n      yield\n    end", str.strip
 
-    str = Sirop.to_string(Foo.instance_method(:baz))
+    str = Sirop.to_source(Foo.instance_method(:baz))
     assert_equal "def baz(&)\n      bar(42, &)\n    end", str.strip
   end
 end

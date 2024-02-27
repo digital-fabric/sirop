@@ -3,7 +3,7 @@
 require 'prism'
 require 'sirop/prism_ext'
 require 'sirop/finder'
-require 'sirop/rewriter'
+require 'sirop/sourcifier'
 
 module Sirop
   class << self
@@ -18,13 +18,14 @@ module Sirop
       end
     end
 
-    def to_source(node)
-      Rewriter.new.rewrite(node)
+    def to_source(obj)
+      obj = to_ast(obj) if !obj.is_a?(Prism::Node)
+      Sourcifier.new.to_source(obj)
     end
 
-    def to_string(obj)
-      to_source(to_ast(obj))
-    end
+    # def to_string(obj)
+    #   to_source(to_ast(obj))
+    # end
 
     private
 

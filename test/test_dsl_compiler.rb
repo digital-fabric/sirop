@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require_relative './helper'
-require_relative './dsl_rewriter'
-require 'cgi'
+require_relative './dsl_compiler'
 
 class DSLRewriterTest < Minitest::Test
 
@@ -18,13 +17,13 @@ class DSLRewriterTest < Minitest::Test
     original_src = IO.read(fn).chomp
     compiled_src = IO.read(compiled_fn).chomp
 
-    define_method(:"test_rewrite_dsl_#{name}") do
+    define_method(:"test_compile_dsl_#{name}") do
       proc = eval(original_src, binding, fn)
       node = Sirop.to_ast(proc)
       assert_kind_of Prism::Node, node
 
       p node if ENV['DEBUG'] == '1'
-      result = DSLRewriter.new.rewrite(node)
+      result = DSLRewriter.new.to_source(node)
       puts result if ENV['DEBUG'] == '1'
 
       assert_equal compiled_src, result

@@ -2,13 +2,13 @@
 
 require_relative './helper'
 
-class RewriterVerbatimTest < Minitest::Test
+class SorcifierTest < Minitest::Test
   SYNTAX_EXAMPLES_PATH = File.join(EXAMPLES_PATH, 'syntax')
 
   Dir["#{SYNTAX_EXAMPLES_PATH}/*.rb"].each do |fn|
     name = File.basename(fn).match(/^(.+)\.rb$/)[1]
     src = IO.read(fn)
-    define_method(:"test_rewrite_verbatim_#{name}") {
+    define_method(:"test_sourcify_#{name}") {
       proc = eval(src, binding, fn)
       node = Sirop.to_ast(proc)
       assert_kind_of Prism::Node, node

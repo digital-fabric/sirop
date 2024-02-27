@@ -3,14 +3,15 @@
 require 'prism'
 
 module Sirop
-  class Rewriter < Prism::BasicVisitor
+  # 
+  class Sourcifier < Prism::BasicVisitor
     attr_reader :buffer
 
     def initialize
       @buffer = +''
     end
   
-    def rewrite(node)
+    def to_source(node)
       @buffer.clear
       visit(node)
       @buffer
