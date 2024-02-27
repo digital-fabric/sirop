@@ -23,10 +23,6 @@ module Sirop
       Sourcifier.new.to_source(obj)
     end
 
-    # def to_string(obj)
-    #   to_source(to_ast(obj))
-    # end
-
     private
 
     def proc_ast(proc)
