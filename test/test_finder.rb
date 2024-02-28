@@ -4,7 +4,15 @@ require_relative './helper'
 require_relative './fixtures/methods'
 
 class PrismTest < Minitest::Test
-  def test_to_ast_lambda_1
+  def test_evaled_proc
+    proc = eval "->(x) { x * 2 }"
+    assert_equal 84, proc.(42)
+
+    assert_raises(Sirop::Error) { Sirop.to_ast(proc) }
+
+  end
+
+    def test_to_ast_lambda_1
     proc = load_code('find')[:lambda_1]
     node = Sirop.to_ast(proc)
 

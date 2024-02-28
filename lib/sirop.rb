@@ -6,6 +6,9 @@ require 'sirop/finder'
 require 'sirop/sourcifier'
 
 module Sirop
+  class Error < StandardError
+  end
+
   class << self
     def to_ast(obj)
       case obj
@@ -43,6 +46,8 @@ module Sirop
           super(node)
         end
       end
+    rescue Errno::ENOENT
+      raise Sirop::Error, "Could not get source for proc"
     end
 
     def method_ast(method)
