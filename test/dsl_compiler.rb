@@ -33,15 +33,19 @@ class DSLRewriter < Sirop::Sourcifier
   end
 
   def html_embed_visit(node)
-    embed_visit(node, '\#{CGI.escapeHTML(', ')}')
+    embed_visit(node, '#{CGI.escapeHTML(', ')}')
   end
 
-  def tag_attr_embed(node)
-    embed_visit(node, '\#{', '}')
+  def tag_attr_embed_visit(node)
+    embed_visit(node, '#{', '}')
+  end
+
+  def adjust_whitespace(loc)
+    super(loc) if !@embed_mode
   end
 
   def emit_code(loc, semicolon: false)
-    flush_html_buffer
+    flush_html_buffer if !@embed_mode
     super
   end
 
@@ -53,7 +57,9 @@ class DSLRewriter < Sirop::Sourcifier
     return if @html_buffer.empty?
 
     if !@html_buffer.empty?
-      adjust_whitespace(@html_location_start) if @html_location_start
+      if @last_loc_start
+        adjust_whitespace(@html_location_start) if @html_location_start
+      end
       @buffer << "__buffer__ << \"#{@html_buffer}\""
       @html_buffer.clear
       @last_loc_end = loc_end(@html_location_end) if @html_location_end

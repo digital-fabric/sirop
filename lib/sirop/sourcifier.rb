@@ -31,10 +31,11 @@ module Sirop
 
     def adjust_whitespace(loc)
       if @last_loc_start
-        if @last_loc_end.first != loc.start_line
-          @buffer << "\n" * (loc.start_line - @last_loc_end.first)
+        line_diff = loc.start_line - @last_loc_end.first
+        if line_diff > 0
+          @buffer << "\n" * line_diff
           @buffer << ' ' * loc.start_column
-        else
+        elsif line_diff == 0
           ofs = loc.start_column - @last_loc_end.last
           if ofs > 0
             @buffer << ' ' * ofs
