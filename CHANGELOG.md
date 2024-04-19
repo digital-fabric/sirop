@@ -1,3 +1,10 @@
+# 2024-04-19 0.3
+
+- Add support for injecting (prefixed) parameters to a lambda node
+- Fix whitespace adjustment in DSL compiler
+- Improve DSL compiler to support embedded string expressions
+- Correctly handle eval'd proc
+
 # 2024-02-27 0.2
 
 - Update README
