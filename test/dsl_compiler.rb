@@ -56,14 +56,13 @@ class DSLRewriter < Sirop::Sourcifier
   def flush_html_buffer
     return if @html_buffer.empty?
 
-    if !@html_buffer.empty?
-      if @last_loc_start
-        adjust_whitespace(@html_location_start) if @html_location_start
-      end
-      @buffer << "__buffer__ << \"#{@html_buffer}\""
-      @html_buffer.clear
-      @last_loc_end = loc_end(@html_location_end) if @html_location_end
+    if @last_loc_start
+      adjust_whitespace(@html_location_start) if @html_location_start
     end
+    @buffer << "__buffer__ << \"#{@html_buffer}\""
+    @html_buffer.clear
+    @last_loc_end = loc_end(@html_location_end) if @html_location_end
+
     @html_location_start = nil
     @html_location_end = nil
   end
@@ -82,6 +81,7 @@ class DSLRewriter < Sirop::Sourcifier
     elsif block
       emit_tag_open(node, attrs)
       visit(block.body)
+      @html_location_start ||= node.block.closing_loc
       emit_tag_close(node)
     else
       emit_tag_open_close(node, attrs)
