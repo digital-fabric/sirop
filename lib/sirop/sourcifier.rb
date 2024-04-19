@@ -30,6 +30,8 @@ module Sirop
     end
 
     def adjust_whitespace(loc)
+      return if loc.is_a?(Sirop::Injection)
+
       if @last_loc_start
         line_diff = loc.start_line - @last_loc_end.first
         if line_diff > 0
@@ -86,38 +88,41 @@ module Sirop
     end
 
     VISIT_PLANS = {
-      and:                    [:left, :operator_loc, :right],
-      assoc:                  :visit_child_nodes,
-      assoc_splat:            [:operator_loc, :value],
-      block:                  [:opening_loc, :parameters, :body, :closing_loc],
-      block_argument:         [:operator_loc, :expression],
-      block_parameter:        [:operator_loc, :name_loc],
-      block_parameters:       [:opening_loc, :parameters, :closing_loc],
-      break:                  [:keyword_loc, :arguments],
-      constant_path:          [:parent, :delimiter_loc, :child],
-      constant_read:          :emit_verbatim,
-      else:                   [:else_keyword_loc, :statements],
-      embedded_statements:    [:opening_loc, :statements, :closing_loc],
-      false:                  :emit_verbatim,
-      integer:                :emit_verbatim,
-      keyword_rest_parameter: [:operator_loc, :name_loc],
-      lambda:                 [:operator_loc, :parameters, :opening_loc, :body,
-                               :closing_loc],
-      local_variable_read:    :emit_verbatim,
-      local_variable_write:   [:name_loc, :operator_loc, :value],
-      next:                   [:keyword_loc, :arguments],
-      nil:                    :emit_verbatim,
-      optional_parameter:     [:name_loc, :operator_loc, :value],
-      or:                     [:left, :operator_loc, :right],
-      parentheses:            [:opening_loc, :body, :closing_loc],
-      required_parameter:     :emit_verbatim,
-      rest_parameter:         [:operator_loc, :name_loc],
-      splat:                  [:operator_loc, :expression],
-      statements:             :visit_child_nodes,
-      string:                 :emit_verbatim,
-      symbol:                 :emit_verbatim,
-      true:                   :emit_verbatim,
-      yield:                  [:keyword_loc, :lparen_loc, :arguments, :rparen_loc],
+      and:                        [:left, :operator_loc, :right],
+      assoc:                      :visit_child_nodes,
+      assoc_splat:                [:operator_loc, :value],
+      block:                      [:opening_loc, :parameters, :body, :closing_loc],
+      block_argument:             [:operator_loc, :expression],
+      block_parameter:            [:operator_loc, :name_loc],
+      block_parameters:           [:opening_loc, :injected_parameters, :parameters, :closing_loc],
+      break:                      [:keyword_loc, :arguments],
+      constant_path:              [:parent, :delimiter_loc, :child],
+      constant_read:              :emit_verbatim,
+      else:                       [:else_keyword_loc, :statements],
+      embedded_statements:        [:opening_loc, :statements, :closing_loc],
+      false:                      :emit_verbatim,
+      integer:                    :emit_verbatim,
+      keyword_rest_parameter:     [:operator_loc, :name_loc],
+      keyword_parameter:          :emit_verbatim,
+      lambda:                     [:operator_loc, :parameters, :opening_loc, :body,
+                                   :closing_loc],
+      local_variable_read:        :emit_verbatim,
+      local_variable_write:       [:name_loc, :operator_loc, :value],
+      next:                       [:keyword_loc, :arguments],
+      nil:                        :emit_verbatim,
+      optional_parameter:         [:name_loc, :operator_loc, :value],
+      optional_keyword_parameter: [:name_loc, :value],
+      or:                         [:left, :operator_loc, :right],
+      parentheses:                [:opening_loc, :body, :closing_loc],
+      required_parameter:         :emit_verbatim,
+      required_keyword_parameter: :emit_verbatim,
+      rest_parameter:             [:operator_loc, :name_loc],
+      splat:                      [:operator_loc, :expression],
+      statements:                 :visit_child_nodes,
+      string:                     :emit_verbatim,
+      symbol:                     :emit_verbatim,
+      true:                       :emit_verbatim,
+      yield:                      [:keyword_loc, :lparen_loc, :arguments, :rparen_loc],
     }
 
     VISIT_PLANS.each do |key, plan|
@@ -153,9 +158,21 @@ module Sirop
     end
 
     def visit_parameters_node(node)
-      comma = visit_comma_separated_nodes(node.requireds)
+      comma = false
+      # injected_prefix is a custom attribute added by Sirop to the
+      # ParametersNode class (in lib/sirop/prism_ext.rb). It is used
+      # as a way to add a first parameter to a block or method.
+      if node.injected_prefix
+        emit_code(node.injected_prefix)
+        # adjust last_loc_end for proper whitespace after comma
+        @last_loc_end[1] -= 2 if @last_loc_end
+        # binding.irb
+        comma = true
+      end
+      comma = visit_comma_separated_nodes(node.requireds, comma)
       comma = visit_comma_separated_nodes(node.optionals, comma)
       comma = visit_comma_separated_nodes(node.posts, comma)
+      comma = visit_comma_separated_nodes(node.keywords, comma)
       if node.rest
         emit_comma if comma
         comma = true

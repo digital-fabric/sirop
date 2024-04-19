@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'prism'
+require 'sirop/injection'
 require 'sirop/prism_ext'
 require 'sirop/finder'
 require 'sirop/sourcifier'
