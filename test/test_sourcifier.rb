@@ -54,7 +54,7 @@ require_relative './helper'
 # end
 
 class SorcifierPrismTest < Minitest::Test
-  PRISM_EXAMPLES_PATH = File.join(EXAMPLES_PATH, 'prism/fixtures')
+  PRISM_EXAMPLES_PATH = File.join(EXAMPLES_PATH, 'prism')
   p path: PRISM_EXAMPLES_PATH
 
   Dir["#{PRISM_EXAMPLES_PATH}/*.txt"].each do |fn|
