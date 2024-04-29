@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.required_ruby_version = '>= 3.2'
 
-  s.add_runtime_dependency      'prism',                '~>0.19.0'
+  s.add_runtime_dependency      'prism',                '~>0.27.0'
 
   s.add_development_dependency  'minitest',             '~>5.22.0'
 end

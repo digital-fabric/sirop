@@ -38,6 +38,7 @@ module Sirop
       global_variable_target:     :emit_verbatim,
       global_variable_write:      [:name_loc, :operator_loc, :value],
       imaginary:                  :emit_verbatim,
+      implicit:                   :emit_nothing,
       implicit_rest:              :emit_nothing,
       in:                         [:in_loc, :pattern, :then_loc],
       index_target:               [:receiver, :opening_loc, :arguments, :closing_loc],
