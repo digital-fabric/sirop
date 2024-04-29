@@ -627,7 +627,8 @@ module Sirop
     def visit_statements_node(node)
       first = true
       node.body&.each do |n|
-        emit_code(n, semicolon: !first)
+        @semicolon = !first
+        visit(n)
         first = false
       end
     end
