@@ -1,3 +1,8 @@
+# 2024-04-29 0.4
+
+- Improve sourcifier to support all Ruby syntax, based on Prism test fixtures
+- Update Prism
+
 # 2024-04-19 0.3
 
 - Add support for injecting (prefixed) parameters to a lambda node
