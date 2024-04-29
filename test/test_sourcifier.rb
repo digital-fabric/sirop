@@ -69,12 +69,6 @@ class SorcifierPrismTest < Minitest::Test
       code = Sirop.to_source(node)
       puts code if ENV['DEBUG'] == '1'
 
-      # puts
-      # p src.chomp
-      # puts
-      # p code
-      # exit!
-
       assert_equal src.chomp, code
     }
   end
