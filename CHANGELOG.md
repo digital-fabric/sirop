@@ -1,3 +1,7 @@
+# 2025-01-09 0.5
+
+- Add after_body hook for lambdas
+
 # 2024-04-29 0.4
 
 - Improve sourcifier to support all Ruby syntax, based on Prism test fixtures
