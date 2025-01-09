@@ -649,6 +649,7 @@ module Sirop
       emit_code(node.parameters)
       emit_code(node.opening_loc)
       emit_code(node.body, semicolon: node.opening_loc.slice == 'do')
+      node.after_body_proc&.(node)
       emit_code(node.closing_loc, semicolon: node.closing_loc.slice == 'end')
     end
 

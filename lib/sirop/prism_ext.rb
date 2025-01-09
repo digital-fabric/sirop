@@ -18,6 +18,8 @@ class Prism::BlockParametersNode
 end
 
 class Prism::LambdaNode
+  attr_reader :after_body_proc
+
   # @param params [String] injected parameters
   # @return [void]
   def inject_parameters(params)
@@ -30,5 +32,9 @@ class Prism::LambdaNode
     else
       instance_variable_set(:@parameters, Sirop::Injection.new("(#{params})"))
     end
+  end
+
+  def after_body(&b)
+    @after_body_proc = b
   end
 end
