@@ -21,7 +21,7 @@ module Sirop
       class_variable_read:        :emit_verbatim,
       class_variable_target:      :emit_verbatim,
       class_variable_write:       [:name_loc, :operator_loc, :value],
-      constant_path:              [:parent, :delimiter_loc, :child],
+      constant_path:              [:parent, :delimiter_loc, :name_loc],
       constant_path_write:        [:target, :operator_loc, :value],
       constant_read:              :emit_verbatim,
       constant_write:             [:name_loc, :operator_loc, :value],
@@ -49,7 +49,7 @@ module Sirop
       keyword_rest_parameter:     [:operator_loc, :name_loc],
       keyword_parameter:          :emit_verbatim,
       local_variable_and_write:   [:name_loc, :operator_loc, :value],
-      local_variable_operator_write: [:name_loc, :operator_loc, :value],
+      local_variable_operator_write: [:name_loc, :binary_operator_loc, :value],
       local_variable_or_write:    [:name_loc, :operator_loc, :value],
       local_variable_read:        :emit_verbatim,
       local_variable_target:      :emit_verbatim,
@@ -286,7 +286,7 @@ module Sirop
       emit_code(node.predicate)
       emit_code(node.then_keyword_loc)
       emit_code(node.statements, semicolon: true)
-      emit_code(node.consequent) if node.consequent
+      emit_code(node.subsequent) if node.subsequent
       emit_code(node.end_keyword_loc, semicolon: true) if node.if_keyword_loc.slice == 'if'
     end
 
@@ -294,7 +294,7 @@ module Sirop
       emit_code(node.predicate)
       emit_code(node.then_keyword_loc)
       emit_code(node.statements)
-      emit_code(node.consequent)
+      emit_code(node.subsequent)
     end
 
     def visit_if_node_guard(node)
@@ -313,7 +313,7 @@ module Sirop
       emit_code(node.then_keyword_loc)
       @semicolon = true
       emit_code(node.statements)
-      emit_code(node.consequent) if node.consequent
+      emit_code(node.else_clause) if node.else_clause
       emit_code(node.end_keyword_loc, semicolon: true) if node.keyword_loc.slice == 'unless'
     end
 
@@ -327,7 +327,7 @@ module Sirop
       emit_code(node.case_keyword_loc)
       emit_code(node.predicate)
       node.conditions.each { |c| emit_code(c, semicolon: true) }
-      emit_code(node.consequent, semicolon: true)
+      emit_code(node.else_clause, semicolon: true)
       emit_code(node.end_keyword_loc, semicolon: true)
     end
 
@@ -492,7 +492,7 @@ module Sirop
       emit_code(node.operator_loc)
       emit_code(node.reference)
       emit_code(node.statements, semicolon: true)
-      emit_code(node.consequent)
+      emit_code(node.subsequent)
     end
 
     def visit_begin_node(node)
