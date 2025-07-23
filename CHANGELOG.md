@@ -1,3 +1,7 @@
+# 0.6 2025-07-23
+
+- Update to current version of Prism
+
 # 2025-01-09 0.5
 
 - Add after_body hook for lambdas
@@ -25,3 +29,4 @@
 # 2024-02-20 0.1
 
 - Find node for a given `Proc` object
+-

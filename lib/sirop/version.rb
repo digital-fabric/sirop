@@ -1,4 +1,4 @@
 module Sirop
   # Sirop version
-  VERSION = '0.5'
+  VERSION = '0.6'
 end
