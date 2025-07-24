@@ -1,3 +1,8 @@
+# 0.7 2025-07-24
+
+- Add minimize_whitespace option to `Sourcifier#initialize`
+- Fix `Sirop.to_ast` for wrapped procs
+
 # 0.6 2025-07-23
 
 - Update to current version of Prism
@@ -29,4 +34,3 @@
 # 2024-02-20 0.1
 
 - Find node for a given `Proc` object
--
