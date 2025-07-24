@@ -5,8 +5,7 @@ require 'prism'
 module Sirop
   class Finder < Prism::BasicVisitor
     def self.find(*, &)
-      finder = self.new
-      finder.find(*, &)
+      new.find(*, &)
     end
 
     def find(root, key, &)

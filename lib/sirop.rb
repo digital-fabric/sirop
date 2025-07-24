@@ -30,12 +30,16 @@ module Sirop
     private
 
     def proc_ast(proc)
-      fn, lineno = proc.source_location  
+      fn, lineno = proc.source_location
       pr = Prism.parse(IO.read(fn), filepath: fn)
       program = pr.value
 
       Finder.find(program, proc) do
         on(:lambda) do |node|
+          found!(node) if node.location.start_line == lineno
+          super(node)
+        end
+        on(:block) do |node|
           found!(node) if node.location.start_line == lineno
           super(node)
         end
