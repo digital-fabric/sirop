@@ -3,7 +3,7 @@
 require 'prism'
 
 module Sirop
-  # 
+  #
   class Sourcifier < Prism::BasicVisitor
     VISIT_PLANS = {
       alias_global_variable:      [:keyword_loc, :new_name, :old_name],
@@ -91,20 +91,21 @@ module Sirop
 
     attr_reader :buffer
 
-    def initialize
+    def initialize(minimize_whitespace: false)
       @buffer = +''
+      @minimize_whitespace = minimize_whitespace
     end
-  
+
     def to_source(node)
       @buffer.clear
       visit(node)
       @buffer
     end
-  
+
     def loc_start(loc)
       [loc.start_line, loc.start_column]
     end
-  
+
     def loc_end(loc)
       [loc.end_line, loc.end_column]
     end
@@ -120,16 +121,16 @@ module Sirop
         line_diff = loc.start_line - @last_loc_end.first
         if line_diff > 0
           @buffer << "\n" * line_diff
-          @buffer << ' ' * loc.start_column
+          @buffer << ' ' * loc.start_column if !@minimize_whitespace
         elsif line_diff == 0
           ofs = loc.start_column - @last_loc_end.last
           if ofs > 0
-            @buffer << ' ' * ofs
+            @buffer << (@minimize_whitespace ? ' ' : (' ' * ofs))
           end
         end
       else
         # empty buffer
-        @buffer << ' ' * loc.start_column
+        @buffer << ' ' * loc.start_column if !@minimize_whitespace
       end
       @last_loc = loc
       @last_loc_start = loc_start(loc)
@@ -141,7 +142,7 @@ module Sirop
 
       if @last_loc
         loc_loc = loc.is_a?(Prism::Node) ? loc.location : loc
-        return if loc_loc.slice == @last_loc.slice && loc_loc.start_line == @last_loc.start_line && 
+        return if loc_loc.slice == @last_loc.slice && loc_loc.start_line == @last_loc.start_line &&
           loc_loc.start_column == @last_loc.start_column
       end
 
@@ -155,20 +156,20 @@ module Sirop
       str = str.chomp if chomp
       emit(str)
     end
-  
+
     def emit_verbatim(node)
       emit_code(node.location)
     end
 
     def emit_nothing(node)
       # emit nothing
-    end  
+    end
 
     def emit_str(str)
       emit(str)
       @last_loc_end[1] += str.size
     end
-  
+
     def emit_comma
       emit_str(',')
     end
@@ -193,7 +194,7 @@ module Sirop
       sym = :"visit_#{key}_node"
       define_method(sym) { |n| visit_plan(plan, n) }
     end
-  
+
     def visit_plan(plan, node)
       return send(plan, node) if plan.is_a?(Symbol)
 
@@ -270,7 +271,7 @@ module Sirop
     def visit_arguments_node(node, subscript = 0..-1)
       visit_comma_separated_nodes(node.arguments[subscript])
     end
-  
+
     def visit_keyword_hash_node(node)
       visit_comma_separated_nodes(node.elements)
     end
@@ -298,7 +299,7 @@ module Sirop
     end
 
     def visit_if_node_guard(node)
-      emit_code(node.statements)        
+      emit_code(node.statements)
       emit_code(node.if_keyword_loc)
       emit_code(node.predicate)
     end
@@ -318,7 +319,7 @@ module Sirop
     end
 
     def visit_unless_node_guard(node)
-      emit_code(node.statements)        
+      emit_code(node.statements)
       emit_code(node.keyword_loc)
       emit_code(node.predicate)
     end
@@ -385,7 +386,7 @@ module Sirop
       end
       emit_code(node.opening_loc)
       emit_code(node.arguments)
-      
+
       if block.is_a?(Prism::BlockArgumentNode)
         emit_comma if node.arguments && node.arguments.arguments.size > 0
         emit_code(block)
@@ -461,7 +462,7 @@ module Sirop
       visit_comma_separated_nodes(node.elements)
       emit_code(node.closing_loc)
     end
-  
+
     def visit_array_node(node)
       emit_code(node.opening_loc)
       if node.opening_loc && node.opening_loc.slice =~ /^%/

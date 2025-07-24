@@ -22,9 +22,9 @@ module Sirop
       end
     end
 
-    def to_source(obj)
+    def to_source(obj, **)
       obj = to_ast(obj) if !obj.is_a?(Prism::Node)
-      Sourcifier.new.to_source(obj)
+      Sourcifier.new(**).to_source(obj)
     end
 
     private
