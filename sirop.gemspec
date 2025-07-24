@@ -21,6 +21,5 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.2'
 
   s.add_runtime_dependency      'prism',                '~>1.4.0'
-
-  s.add_development_dependency  'minitest',             '~>5.22.0'
+  s.add_development_dependency  'minitest',             '~>5.25.5'
 end
