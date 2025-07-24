@@ -42,17 +42,17 @@ class PrismTest < Minitest::Test
 
   class Foo
     def foo; :foo; end
-    
+
     def bar(x)
       p x
       yield
     end
-  
+
     def baz(&)
       bar(42, &)
     end
   end
-  
+
   def test_to_ast_method
     f = Foo.new
 

@@ -12,7 +12,7 @@ class DSLRewriterTest < Minitest::Test
   Dir["#{DSL_EXAMPLES_PATH}/*.rb"].each do |fn|
     basename = File.basename(fn)
     name = basename.match(/^(.+)\.rb$/)[1]
-    compiled_fn = File.join(DSL_COMPILED_BASE_PATH, basename)    
+    compiled_fn = File.join(DSL_COMPILED_BASE_PATH, basename)
 
     original_src = IO.read(fn).chomp
     compiled_src = IO.read(compiled_fn).chomp

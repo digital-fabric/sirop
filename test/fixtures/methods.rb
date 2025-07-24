@@ -1,7 +1,7 @@
 
 class Foo
   def foo; :foo; end
-  
+
   def bar(x)
     p x
     yield

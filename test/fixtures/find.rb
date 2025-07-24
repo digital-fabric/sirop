@@ -6,5 +6,5 @@
   },
   proc_2: proc do
     :bar
-  end  
+  end
 }

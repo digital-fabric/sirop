@@ -8,7 +8,7 @@ end
 task :release do
   require_relative './lib/sirop/version'
   version = Sirop::VERSION
-  
+
   puts 'Building sirop...'
   `gem build sirop.gemspec`
 
