@@ -6,13 +6,13 @@ class SiropTest < Minitest::Test
   def test_to_ast_proc
     o = proc { |x| :foo }
     ast = Sirop.to_ast(o)
-    assert_kind_of Prism::BlockNode, ast
+    assert_kind_of Prism::CallNode, ast
   end
 
   def test_to_ast_lambda
     o = lambda { :foo }
     ast = Sirop.to_ast(o)
-    assert_kind_of Prism::BlockNode, ast
+    assert_kind_of Prism::CallNode, ast
   end
 
   def test_to_ast_arrow
