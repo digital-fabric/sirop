@@ -46,7 +46,7 @@ module Sirop
         on(:call) do |node|
           case node.name
           when :proc, :lambda
-            found!(node) if node.block && node.block.location.start_line == lineno
+            found!(node.block) if node.block && node.block.location.start_line == lineno
           end
           super(node)
         end
