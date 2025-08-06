@@ -27,6 +27,11 @@ module Sirop
       Sourcifier.new(**).to_source(obj)
     end
 
+    def to_source_with_source_map(obj, line_ofs = 0, **)
+      ast = to_ast(obj)
+      Sourcifier.new(**).to_source_with_source_map(obj, ast, line_ofs)
+    end
+
     private
 
     def proc_ast(proc)

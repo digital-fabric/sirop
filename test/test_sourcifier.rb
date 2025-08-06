@@ -62,6 +62,27 @@ class SourcifierTest < Minitest::Test
   end
 end
 
+class SourcifierSourceMapTest < Minitest::Test
+  def test_source_map_generation
+    start_line = __LINE__
+    p1 = ->(x) {
+      a
+        b
+          c
+    }
+    src, source_map = Sirop.to_source_with_source_map(p1)
+    assert_kind_of Hash, source_map
+    assert_equal({
+      source_fn: __FILE__,
+      1 => start_line + 1,
+      2 => start_line + 2,
+      3 => start_line + 3,
+      4 => start_line + 4,
+      5 => start_line + 5
+    }, source_map)
+  end
+end
+
 class SourcifierPrismTest < Minitest::Test
   PRISM_EXAMPLES_PATH = File.join(EXAMPLES_PATH, 'prism')
   p path: PRISM_EXAMPLES_PATH

@@ -98,8 +98,17 @@ module Sirop
 
     def to_source(node)
       @buffer.clear
+      @source_map = nil
       visit(node)
       @buffer
+    end
+
+    def to_source_with_source_map(obj, node, line_ofs)
+      @buffer.clear
+      @source_map_line_ofs = line_ofs
+      @source_map = { source_fn: obj.source_location.first }
+      visit(node)
+      [@buffer, @source_map]
     end
 
     def loc_start(loc)
@@ -111,7 +120,16 @@ module Sirop
     end
 
     def emit(str)
+      update_source_map
       @buffer << str
+    end
+
+    def update_source_map
+      return if !@source_map
+
+      buffer_cur_line = @buffer.count("\n") + 1
+      orig_source_cur_line = @last_loc_start ? @last_loc_start.first : 1
+      @source_map[buffer_cur_line] ||= orig_source_cur_line
     end
 
     def adjust_whitespace(loc)
