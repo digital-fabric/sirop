@@ -1,3 +1,7 @@
+# 0.8.1 2025-08-06
+
+- Fix usage of @source_map_line_ofs
+
 # 0.8 2025-08-06
 
 - Add source map generation
