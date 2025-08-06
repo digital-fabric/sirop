@@ -1,3 +1,9 @@
+# 0.8 2025-08-06
+
+- Add source map generation
+- Fix to_ast for procs defined with proc or lambda
+- Require Ruby 3.4 or higher
+
 # 0.7 2025-07-24
 
 - Add minimize_whitespace option to `Sourcifier#initialize`
