@@ -129,7 +129,7 @@ module Sirop
 
       buffer_cur_line = @buffer.count("\n") + 1
       orig_source_cur_line = @last_loc_start ? @last_loc_start.first : 1
-      @source_map[buffer_cur_line] ||= orig_source_cur_line - @source_map_line_ofs
+      @source_map[buffer_cur_line + @source_map_line_ofs] ||= orig_source_cur_line
     end
 
     def adjust_whitespace(loc)
