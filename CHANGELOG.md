@@ -1,3 +1,7 @@
+# 0.8.2 2025-08-07
+
+- Fix source map calculation
+
 # 0.8.1 2025-08-06
 
 - Fix usage of @source_map_line_ofs
