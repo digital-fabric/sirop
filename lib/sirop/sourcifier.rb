@@ -46,6 +46,8 @@ module Sirop
       instance_variable_target:   :emit_verbatim,
       instance_variable_write:    [:name_loc, :operator_loc, :value],
       integer:                    :emit_verbatim,
+      it_parameters:              :emit_nothing,
+      it_local_variable_read:     :emit_verbatim,
       keyword_rest_parameter:     [:operator_loc, :name_loc],
       keyword_parameter:          :emit_verbatim,
       local_variable_and_write:   [:name_loc, :operator_loc, :value],
