@@ -1,3 +1,7 @@
+# 0.8.3 2025-08-08
+
+- Add support for `it`
+
 # 0.8.2 2025-08-07
 
 - Fix source map calculation
