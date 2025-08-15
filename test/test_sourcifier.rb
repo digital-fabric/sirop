@@ -81,6 +81,25 @@ class SourcifierSourceMapTest < Minitest::Test
       5 => start_line + 5
     }, source_map)
   end
+
+  def test_source_map_raise
+    start_line = __LINE__
+    p1 = ->(x) {
+      foo(1)
+      raise 'bar'
+      baz(2)
+    }
+    src, source_map = Sirop.to_source_with_source_map(p1)
+    assert_kind_of Hash, source_map
+    assert_equal({
+      source_fn: __FILE__,
+      1 => start_line + 1,
+      2 => start_line + 2,
+      3 => start_line + 3,
+      4 => start_line + 4,
+      5 => start_line + 5
+    }, source_map)
+  end
 end
 
 class SourcifierPrismTest < Minitest::Test

@@ -122,11 +122,11 @@ module Sirop
     end
 
     def emit(str)
-      update_source_map
+      update_source_map(str)
       @buffer << str
     end
 
-    def update_source_map
+    def update_source_map(str = nil)
       return if !@source_map
 
       buffer_cur_line = @buffer.count("\n") + 1
