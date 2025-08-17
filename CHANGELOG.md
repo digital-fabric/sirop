@@ -1,3 +1,7 @@
+# 0.9 2025-08-17
+
+- Add advance_to_end option to `Sourcifier#adjust_whitespace`
+
 # 0.8.3 2025-08-08
 
 - Add support for `it`
