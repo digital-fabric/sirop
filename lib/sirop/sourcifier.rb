@@ -134,7 +134,7 @@ module Sirop
       @source_map[buffer_cur_line + @source_map_line_ofs] ||= orig_source_cur_line
     end
 
-    def adjust_whitespace(loc)
+    def adjust_whitespace(loc, advance_to_end: true)
       return if loc.is_a?(Sirop::Injection)
 
       if @last_loc_start
@@ -154,7 +154,7 @@ module Sirop
       end
       @last_loc = loc
       @last_loc_start = loc_start(loc)
-      @last_loc_end = loc_end(loc)
+      @last_loc_end = advance_to_end ? loc_end(loc) : @last_loc_start
     end
 
     def emit_code(loc, semicolon: false, chomp: false)
