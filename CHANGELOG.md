@@ -1,3 +1,7 @@
+# 1.0 2025-10-08
+
+- Add support for getting AST of procs/methods defined in IRB session
+
 # 0.9 2025-08-17
 
 - Add advance_to_end option to `Sourcifier#adjust_whitespace`
