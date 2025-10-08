@@ -36,7 +36,7 @@ module Sirop
 
     def proc_ast(proc)
       fn, lineno = proc.source_location
-      pr = Prism.parse(IO.read(fn), filepath: fn)
+      pr = Prism.parse(get_source(fn), filepath: fn)
       program = pr.value
 
       Finder.find(program, proc) do
@@ -62,7 +62,7 @@ module Sirop
 
     def method_ast(method)
       fn, lineno = method.source_location
-      pr = Prism.parse(IO.read(fn), filepath: fn)
+      pr = Prism.parse(get_source(fn), filepath: fn)
       program = pr.value
 
       Finder.find(program, method) do
@@ -71,6 +71,18 @@ module Sirop
           super(node)
         end
       end
+    end
+
+    def get_source(fn)
+      return get_irb_source if fn == '(irb)'
+
+      IO.read(fn)
+    end
+
+    def get_irb_source
+      io = IRB.CurrentContext.io
+      last_line = io.instance_variable_get(:@line_no)
+      (1..last_line).map { io.line(it) }.join
     end
   end
 end
