@@ -1,3 +1,7 @@
+# 1.0.1 2025-10-21
+
+- Update Prism
+
 # 1.0 2025-10-08
 
 - Add support for getting AST of procs/methods defined in IRB session
