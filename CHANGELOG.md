@@ -1,3 +1,7 @@
+# 1.0.2 2026-02-09
+
+- Do not pin versions for dependencies: prism, minitest, irb
+
 # 1.0.1 2025-10-21
 
 - Update Prism
