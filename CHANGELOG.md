@@ -1,3 +1,7 @@
+# 1.0.3 2026-02-09
+
+- Remove unparser ref from 1.0.2
+
 # 1.0.2 2026-02-09
 
 - Do not pin versions for dependencies: prism, minitest, irb
