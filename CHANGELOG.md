@@ -1,3 +1,8 @@
+# 1.1.0 2026-06-21
+
+- Fix sourcifier for various ivar operator write node types, e.g. @g ||= 1
+- Fix IndexyOrWriteNode, IndexAndWriteNode handling ( x[y] ||= z )
+
 # 1.0.3 2026-02-09
 
 - Remove unparser ref from 1.0.2
