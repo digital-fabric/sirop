@@ -556,6 +556,18 @@ module Sirop
     end
     alias_method :visit_index_and_write_node, :visit_index_or_write_node
 
+    def visit_instance_variable_or_write_node(node)
+      emit_code(node.name_loc)
+      emit_code(node.operator_loc)
+      emit_code(node.value)
+    end
+
+    def visit_instance_variable_operator_write_node(node)
+      emit_code(node.name_loc)
+      emit_code(node.binary_operator_loc)
+      emit_code(node.value)
+    end
+    
     def visit_ensure_node(node)
       emit_code(node.ensure_keyword_loc, semicolon: true)
       emit_code(node.statements, semicolon: true)
