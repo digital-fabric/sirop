@@ -536,11 +536,25 @@ module Sirop
         emit_code(node.block)
       end
       emit_code(node.closing_loc)
+      emit_code(node.binary_operator_loc)
+      emit_code(node.value)
+    end
+
+    def visit_index_or_write_node(node)
+      emit_code(node.receiver)
+      emit_code(node.opening_loc)
+      emit_code(node.arguments)
+      if node.block
+        if !node.arguments.arguments.empty?
+          emit_comma
+        end
+        emit_code(node.block)
+      end
+      emit_code(node.closing_loc)
       emit_code(node.operator_loc)
       emit_code(node.value)
     end
-    alias_method :visit_index_and_write_node, :visit_index_operator_write_node
-    alias_method :visit_index_or_write_node, :visit_index_operator_write_node
+    alias_method :visit_index_and_write_node, :visit_index_or_write_node
 
     def visit_ensure_node(node)
       emit_code(node.ensure_keyword_loc, semicolon: true)
