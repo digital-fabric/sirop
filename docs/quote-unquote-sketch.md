@@ -465,7 +465,7 @@ So, we have the following tools:
 - `def_method(unquote(name), *params) { ... }` (define method)
 - `def_lambda(*params) { ... }` (define lambda)
 
-## Deep transform of a block
+## Deep transform of a block (Test example)
 
 Suppose we want to define a test DSL:
 
@@ -534,3 +534,170 @@ ast_transform(ast) { |node, transform|
 ```
 
 So, actually no need to have our own tool, just use regular pattern matching.
+
+## Generating code and saving it
+
+Rails generators use ERB templates, here's an example:
+
+```erb
+class <%= migration_class_name %> < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
+  def change
+    create_table :<%= table_name %><%= render_table_with_dom_id %> do |t|
+<% attributes.each do |attribute| -%>
+<% if attribute.password_digest? -%>
+      t.string :password_digest<%= attribute.inject_options %>
+<% elsif attribute.token? -%>
+      t.string :<%= attribute.name %><%= attribute.inject_options %>
+<% else -%>
+      t.<%= attribute.type %> :<%= attribute.name %><%= attribute.inject_options %>
+<% end -%>
+<% end -%>
+<% if options[:timestamps] -%>
+      t.timestamps
+<% end -%>
+    end
+  end
+end
+```
+
+How would it look with quote/unquote?
+
+```ruby
+version = ActiveRecord::Migration.current_version
+ast = quote do
+  def_class(unquote(migration_class_name), ActiveRecord::Migration[unquote(version)]) do
+    def change
+      create table unquote(table_name) do |t|
+        unquote_block attributes.map do |attribute|
+          opts = attribute.inject_options
+          if attribute.password_digest?
+            quote { t.string unquote(:"password_digest#{opts}") }
+          elsif attribute.token?
+            quote { t.string unquote(:"#{attribute.name}#{opts}") }
+          else
+            # note use of unquote as method name
+            quote { t.send(unquote(attribute.type), unquote(:"#{opts}") }
+          end
+        end
+        unquote(
+          options[:timestamps] ? quote { t.timestamps } : :__nop__
+        )
+      end
+    end
+  end
+end
+
+IO.write(fn, Sirop.to_source(ast))
+```
+
+## Class/module definitions
+
+Actually, Prism does accept class definitions in the form:
+
+```ruby
+class unquote(c) < A::B::unquote(1)
+  def x; 1; end
+end
+```
+
+But it fucks up syntax highlighting, at least in Zed, so we'll probably want to
+have `def_class` and `def_module`.
+
+## The nil problem revisited
+
+In order to allow `unquote` to emit nothing, we introduce the `:__nop__` value,
+which lets us conditionally emit code. Quick recap: unquote is evaluated at
+compile time, while the surrounding quoted code is evaluated at run time. So
+unquote allows us to conditionally generate code. Using `:__nop__` allows us to
+treat nil as a normal value.
+
+```ruby
+def gen(x, print)
+  ast = quote {
+    unquote(
+      print ? quote { puts "Adding to #{unquote(x)}" } : :__nop__
+    )
+    x + 1
+  }
+end
+```
+
+## Interim summary 3
+
+So, we have the following tools:
+
+- `quote { ... }` (convert given block to ast)
+- `unquote(v)` (convert arbitrary value to ast (inside quote))
+- `ast_transform(ast) { |node, transformer| ... }` (deep transform ast)
+- `:__nop__` special value for emitting nothing
+
+- `unquote_verbatim(str)` (convert given source code to ast)
+- `unquote_block([...])` (convert given array of nodes to a block node) (???)
+
+- `def_class(class_name, base_class = nil) { ... }` (define class)
+- `def_module(module_name) { ... }` (define module)
+- `def_method(unquote(name), *params) { ... }` (define method)
+- `def_lambda(*params) { ... }` (define lambda)
+
+Remarks and observations:
+
+- `unquote` is eavaluated at macro compile time, which lets us generate code
+  conditionally.
+- `unquote_block` can be used to transform any enumerable into a block of code.
+  Here, too, we may use `:__nop__`:
+
+  ```ruby
+  quote {
+    unquote_block items.map { |i|
+      i.show? ? quote { t.send(unquote(i.to_sym), true) } : :__nop__
+    }
+  }
+  ```
+
+## unquoting a method call
+
+In the above last example, we want to generate a method call based on some
+unquoted value. We need a tool for doing this:
+
+```ruby
+quote {
+  # instead of
+  t.send(unquote(m), *, **, &)
+
+  # do this
+  t.__call__(unquote(m), *, **, &)
+}
+```
+
+## Interim summary 4
+
+So, we have the following tools:
+
+- `quote { ... }` (convert given block to ast)
+- `unquote(v)` (convert arbitrary value to ast (inside quote))
+- `ast_transform(ast) { |node, transformer| ... }` (deep transform ast)
+- `:__nop__` special value for emitting nothing
+
+- `unquote_verbatim(str)` (convert given source code to ast)
+- `unquote_block([...])` (convert given array of nodes to a block node) (???)
+
+- `o.__call__(m, *, **, &)` (method call with arbitrary method name)
+- `def_class(class_name, base_class = nil) { ... }` (define class)
+- `def_module(module_name) { ... }` (define module)
+- `def_method(unquote(name), ...) { ... }` (define method)
+- `def_lambda(*params) { ... }` (define lambda)
+
+Remarks and observations:
+
+- `unquote` is eavaluated at macro compile time, which lets us generate code
+  conditionally.
+- `unquote_block` can be used to transform any enumerable into a block of code.
+  Here, too, we may use `:__nop__`:
+
+  ```ruby
+  quote {
+    unquote_block items.map { |i|
+      i.show? ? quote { t.__call__(unquote(i.name), true) } : :__nop__
+    }
+  }
+  ```
