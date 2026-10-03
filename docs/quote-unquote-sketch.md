@@ -701,3 +701,69 @@ Remarks and observations:
     }
   }
   ```
+
+## Enhancing methods
+
+Suppose we want to be able to automagically memoize arbitrary methods.
+
+The traditional approach would be something like:
+
+```ruby
+# by defining a module (should work, but check it)
+module Memoize
+  def memoize(*methods)
+    mod = Module.new
+    methods.each do |m|
+      mod.define_method(m) { (@memo ||= {})[m] ||= super }
+    end
+    prepend(mod)
+  end
+end
+```
+
+With quote/unqoute:
+
+```ruby
+module Memoize
+  def memoize(*methods)
+    methods.each do |m|
+      ast = Sirop.to_ast(method(m))
+      # in place mutation (can we make this work?)
+      # Sirop.mutate(root, node => replacement, ...)
+      memoized = Sirop.mutate(
+        ast,
+        ast.body => quote { (@memo ||= {})[m] = (unqoute(ast.body)) }
+      )
+      eval(Sirop.to_source(memoized))
+    end
+  end
+end
+```
+
+## Mutating an AST
+
+We introduce `#transform` method which are used to do a deep transform.
+`#mutate` is a specialization of `#transform` for replacing specific nodes in
+the AST.
+
+```ruby
+# transform
+l1 = ->(x) { 42 }
+l2 = Sirop.eval self, Sirop.transform(Sirop.to_ast(l1)) { |n|
+  n.is_a?(Prism::IntegerNode) ? quote { 43 } : n
+}
+
+# mutate
+ast = Sirop.to_ast(method(:foo))
+Sirop.eval self, Sirop.mutate(
+  ast, ast.body => quote {
+    (@memo ||= {})[m] = (unqoute(ast.body))
+  }
+)
+```
+
+Added tools:
+
+- `Sirop.eval(receiver, ast)` - eval the given ast on the given receiver
+- `Sirop.transform(ast) { ... }` - transform the ast with the given block
+- `Sirop.mutate(ast, n => n2)` - mu
