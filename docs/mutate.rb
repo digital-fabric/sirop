@@ -24,7 +24,6 @@ class Mutator
         mutations[k] = v2 if v2 != v
       end
     end
-    p(mutations:) if !mutations.empty?
     mutations.empty? ? n : n.copy(**mutations)
   end
 end
@@ -32,7 +31,9 @@ end
 def mutate(ast, **mutations, &block)
   block ||= ->(n) do
     if n.is_a?(Prism::StatementsNode) && mutations.has_key?(n.body)
-      mutations[n.body]
+      v = mutations[n.body]
+      v = v.body if v.is_a?(Prism::StatementsNode)
+      n.copy(body: v)
     else
       mutations.has_key?(n) ? mutations[n] : n
     end
@@ -60,5 +61,6 @@ ast = Prism.parse('def y(z); 44; end').value.statements
 replacement = quote { 45 }
 puts '*' * 40
 puts Sirop.to_source(ast).gsub(/\n{2,}/m, "\n")
-o = mutate(ast, ast.body[0].body => replacement)
+o = mutate(ast, ast.body => replacement)
+p o
 puts Sirop.to_source(o).gsub(/\n{2,}/m, "\n")

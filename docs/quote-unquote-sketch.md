@@ -742,18 +742,16 @@ end
 
 ## Mutating an AST
 
-We introduce `#transform` method which are used to do a deep transform.
-`#mutate` is a specialization of `#transform` for replacing specific nodes in
-the AST.
+We introduce `#mutate` method which are used to do a deep transform.
 
 ```ruby
-# transform
+# mutate with a block
 l1 = ->(x) { 42 }
-l2 = Sirop.eval self, Sirop.transform(Sirop.to_ast(l1)) { |n|
+l2 = Sirop.eval self, Sirop.mutate(Sirop.to_ast(l1)) { |n|
   n.is_a?(Prism::IntegerNode) ? quote { 43 } : n
 }
 
-# mutate
+# mutate with node replacement hash
 ast = Sirop.to_ast(method(:foo))
 Sirop.eval self, Sirop.mutate(
   ast, ast.body => quote {
@@ -765,5 +763,7 @@ Sirop.eval self, Sirop.mutate(
 Added tools:
 
 - `Sirop.eval(receiver, ast)` - eval the given ast on the given receiver
-- `Sirop.transform(ast) { ... }` - transform the ast with the given block
-- `Sirop.mutate(ast, n => n2)` - mu
+- `Sirop.mutate(ast) { ... }` - copy the ast, replacing nodes with the result of
+  the block
+- `Sirop.mutate(ast, n1 => n2)` - copy the ast, replacing nodes with given
+  replacements
