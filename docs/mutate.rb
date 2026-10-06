@@ -49,11 +49,12 @@ end
 # p ast
 # exit
 
-# o = mutate(Prism.parse('def x; 42; end').value.statements) { |n|
-#   n.is_a?(Prism::IntegerNode) ? quote { (43) } : n
-# }
-# puts '*' * 40
-# puts Sirop.to_source(o).gsub(/\n{2,}/m, "\n")
+o = mutate(Prism.parse('def x; 42; end').value.statements) { |n|
+  n.is_a?(Prism::IntegerNode) ? quote { (43) } : n
+}
+puts '*' * 40
+puts Sirop.to_source(o).gsub(/\n{2,}/m, "\n")
+exit!
 
 puts
 

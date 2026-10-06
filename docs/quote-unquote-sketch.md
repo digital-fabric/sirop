@@ -127,7 +127,7 @@ def compile_html(ast)
         end
       }
     )
-    unquote(flusher.())
+    unquote(flusher.() || :__nop__)
     __buffer__
   }
 end
@@ -506,16 +506,14 @@ to intercept the calls to `expect` as follows:
 ```ruby
 def test(name, &block)
   ast = Sirop.ast(block)
-  transformed = ast_transform(ast) { |node, transform|
-    if ast_match(node, Prism::CallNode, receiver: nil, name: :expect)
-      quote { assert { unquote(node.arguments[0]) } }
+  transformed = mutate(ast) { |node, transform|
+    if node in Prism::CallNode, receiver: nil, name: :expect, arguments:)
+      quote { assert { unquote(arguments[0]) } }
     else
       transform.(node)
     end
   }
-  test_case = Testing::TestCase.new(name)
-  test_proc = eval(Sirop.to_source(transformed))
-  
+  test_case = Testing::TestCase.new(name, eval_ast(transformed))
 end
 ```
 
@@ -537,7 +535,7 @@ So, actually no need to have our own tool, just use regular pattern matching.
 
 ## Generating code and saving it
 
-Rails generators use ERB templates, here's an example:
+Rails generators use ERB templates, here's an excerpt:
 
 ```erb
 class <%= migration_class_name %> < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
@@ -568,7 +566,7 @@ ast = quote do
   def_class(unquote(migration_class_name), ActiveRecord::Migration[unquote(version)]) do
     def change
       create table unquote(table_name) do |t|
-        unquote_block attributes.map do |attribute|
+        unquote attributes.map do |attribute|
           opts = attribute.inject_options
           if attribute.password_digest?
             quote { t.string unquote(:"password_digest#{opts}") }
@@ -767,3 +765,203 @@ Added tools:
   the block
 - `Sirop.mutate(ast, n1 => n2)` - copy the ast, replacing nodes with given
   replacements
+
+## RoutingTree
+
+```ruby
+# from routing_tree.rb
+def emit_wildcard_childless_root_code(buffer, root_path)
+  emit_code_line(buffer, '->(path, params) {')
+  if root_path != '/'
+    re = /^#{Regexp.escape(root_path)}(\/.*)?$/
+    emit_code_line(buffer, "  return if path !~ #{re.inspect}")
+  end
+  emit_code_line(buffer, "  @dynamic_map[#{root_path.inspect}]")
+  emit_code_line(buffer, '}')
+end
+```
+
+What about:
+
+```ruby
+def emit_wildcard_childless_root_code(root_path)
+  re = /^#{Regexp.escape(root_path)}(\/.*)?$/
+  quote {
+    ->(path, params) {
+      unquote(
+        root_path != '/' ?
+          quote { return if path != unquote(re) }) : :__nop__        
+      )
+      dynamic_map[unquote(root_path)]
+    }
+  }
+end
+```
+
+Further on:
+
+```ruby
+def visit_routing_tree_entry(entry:, segment_idx:)
+  # If no targets exist in the entry's subtree, we can return nil
+  # immediately.
+  if !entry[:target] && !find_target_in_subtree(entry)
+    return quote { nil }
+  end
+
+  if void_route?(entry)
+    parent = entry[:parent]
+    parametric_sibling = parent && parent[:children] && parent[:children]['[]']
+    if parametric_sibling
+      return quote { nil }
+    end
+  end
+
+  return :__nop__ if !entry[:target] && !entry[:children]
+
+  if entry[:target] && entry[:handle_subtree] && !entry[:children]
+    if entry[:static] ?
+      quote { return @static_map[unquote(entry[:path])] } :
+    else
+      quote { return @dynamic_map[unquote(entry[:path])] }
+    end
+  end
+
+  clauses = []
+  if entry[:target]
+    return_expr = entry[:static] ?
+      quote { return @static_map[unquote(entry[:path])] } :
+      quote { return @dynamic_map[unquote(entry[:path])] }
+    clauses << quote { when nil; unquote(return_expr) }
+  end
+  if entry[:children]
+    clauses << routing_tree_entry_children_clauses(clauses, entry:, segment_idx:)
+  end
+
+  # Get next segment
+  if !clauses.empty?
+    quote {
+      case (s = segments[unquote(segment_idx)])
+        unquote()
+      end
+    }
+  end
+end
+```
+
+There are two problems with this, related to how case is parsed. Prism cannot
+parse an isolated "when foo" expression. It also can't parse "case x;
+unquote(y); end", so we need a way to express this. Maybe:
+
+```ruby
+quote {
+  __.case(foo) {
+    __.when nil
+      return nil
+    __.else {
+      __.case
+    }
+  }
+}
+```
+
+OK, this looks OK for what it does. But can we take it further?
+
+```ruby
+quote {
+  __.case(foo) {
+    unquote clauses.map { quote {
+      __.when(nil) {
+        return nil
+      }
+    }}
+    __.else
+      unquote {
+        if entry[:is_static]
+          quote { __.return @static_map['/foo/bar'] }
+        else
+          quote { __.return @dynamic_map['/foo/bar'] }
+        end
+      }
+  }
+}
+```
+
+## The binding problem
+
+We have a big problem:
+
+```ruby
+def unroll_loop(range, &block)
+  quote {
+    unquote {
+      range.map { |v|
+        quote { block.(unquote(v)) }
+      }
+    }
+  }
+end
+```
+
+The quoted block is not `eval`ed. The block given to unquote is reified from the
+AST and then `eval`ed. The problem here is that when `eval`ing the unquoted
+block, we don't have access to the binding of `unroll_loop`, since we're running
+in the context of a `quote` call. This is the famous "binding of caller"
+problem.
+
+A solution would be to explicitly pass the binding to quote:
+
+```ruby
+quote(binding) { ... }
+```
+
+This allows us to do this, and the syntax cost is negligible. This is good
+enough.
+
+## Interim summary 5
+
+Again, the basic tools:
+
+- `quote(?binding) { }`
+- `unquote(v)` / `unquote { }`
+- `mutate(v)` / `mutate { }`
+
+Source <-> AST:
+
+- `Sirop.to_ast(o)`
+- `Sirop.to_source(ast)`
+- `eval_ast(ast)`
+
+Synthetic code:
+
+- `__.case(e) { }`/`__.when(e) { }`/`__.if(e) { }` etc.
+- `__.def(m, *args) { }`
+- `__.lambda(*args) { }`
+- `__.(m, *args)` - a synthetic call
+- `receiver.__.(m, *args)` - synthetic call with receiver
+- `__.begin { }` / `__.rescue(E => e) { }` / `__.ensure { }` etc.
+
+## Implementing something like `__.case`
+
+```ruby
+def synthetic_case(expr_ast, body_ast)
+  # using the Prism DSL
+  Prism::CaseNode(value: expr_ast, body: body_ast, ...)
+end
+
+# some are easier:
+def synthetic_begin(body_ast)
+  quote(binding) { begin { unquote(body_ast) } }
+end
+```
+
+## The question of backtraces
+
+Since we're generating a synthetic AST, which may be compose of ASTs originating
+in different source locations, how can we reflect the true location of each part
+of the generated code?
+
+One solution is to just do what tools like ERB or IRB do, and report the
+filename as `(sirop)`.
+
+A second solution is to add a `begin/rescue` and translate the backtrace
+accordingly, but this solution may prove to be brittle, and inexact.
