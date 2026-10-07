@@ -965,3 +965,13 @@ filename as `(sirop)`.
 
 A second solution is to add a `begin/rescue` and translate the backtrace
 accordingly, but this solution may prove to be brittle, and inexact.
+
+## unquote outside of quote
+
+We can use `Sirop.to_ast` to convert arbitrary values to AST:
+
+```ruby
+Sirop.to_ast(ast) #=> ast
+Sirop.to_ast(1) #=> IntegerNode
+Sirop.to_ast([ast1, ast2]) #=> StatementsNode
+```
